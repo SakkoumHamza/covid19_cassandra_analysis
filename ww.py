@@ -78,7 +78,7 @@ insert_query = session.prepare("""
 df = pd.read_csv('data/covid_data.csv')
 df['DATE_DIED'] = df['DATE_DIED'].replace('9999-99-99',pd.NaT)
 df['DATE_DIED'] = pd.to_datetime(df['DATE_DIED'],format='mixed')
-
+df['covid_result'] = df['CLASIFFICATION_FINAL'].apply(lambda x : 1 if x in [1,2,3] else 0)
 
 for _, row in df.iterrows():
     patient_id = uuid4()
