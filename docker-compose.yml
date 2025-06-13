@@ -1,0 +1,11 @@
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra-covid
+    ports:
+      - "9042:9042"   # port CQL natif
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+
+volumes:
+  cassandra-data:
