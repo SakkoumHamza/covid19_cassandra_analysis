@@ -1,6 +1,11 @@
 from cassandra.cluster import Cluster
 import pandas as pd
 from uuid import uuid4
+# Model trainning 
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
 
 # Si Cassandra est sur le même hôte Docker, utilise localhost (127.0.0.1)
 cluster = Cluster(['127.0.0.1'], port=9042)
@@ -76,9 +81,43 @@ insert_query = session.prepare("""
 
 
 df = pd.read_csv('data/covid_data.csv')
-df['DATE_DIED'] = df['DATE_DIED'].replace('9999-99-99',pd.NaT)
-df['DATE_DIED'] = pd.to_datetime(df['DATE_DIED'],format='mixed')
+
+#Columns to dop due to their low correlation with the target
+drops = [
+    'PREGNANT',
+    'OTHER_DISEASE',
+    'TOBACCO',
+    'USMER',
+    'INMSUPR',
+    'ASTHMA',
+    'COPD',
+    'OBESITY',
+    'ICU',
+    'CLASIFFICATION_FINAL',
+    'DATE_DIED'
+]
+df=df.drop(columns = drops,axis=1)
+
 df['covid_result'] = df['CLASIFFICATION_FINAL'].apply(lambda x : 1 if x in [1,2,3] else 0)
+X = df.drop('covid_result',axis=1)
+Y = df['covid_result']
+
+Xtrain,Xtest,Ytrain,Ytest = train_test_split(X,Y,test_size=0.2, random_state=25)
+
+model = RandomForestClassifier(criterion = 'entropy', n_estimators=200, random_state=25)
+model.fit(Xtrain,Ytrain)
+
+Ypred = model.predict(Xtest)
+print('Accuracy score is :',accuracy_score(Ytest,Ypred))
+print('Classification report',classification_report(Ytest,Ypred))
+
+
+
+
+
+
+
+
 
 for _, row in df.iterrows():
     patient_id = uuid4()
